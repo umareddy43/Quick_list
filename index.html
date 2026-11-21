@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call Ledger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3d3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Call Ledger">
+<style>
+:root{--ink:#10243e;--mute:#5a6b80;--bg:#eef2f6;--card:#fff;--line:#d3dce6;--acc:#0b6e66;--accd:#0b3d3a;--acct:#e3f3f1;--red:#b42318;--r:12px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--accd);color:#fff;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+header h1{font-size:18px;margin:0;letter-spacing:.2px}
+header div{display:flex;gap:6px}
+header button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid #ffffff55;background:transparent;color:#fff;font:600 14px inherit}
+main{max-width:640px;margin:0 auto;padding:12px 12px calc(90px + env(safe-area-inset-bottom))}
+section{display:none}section.on{display:block}
+h2{font-size:15px;margin:16px 0 8px}
+input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:16px inherit}
+textarea{min-height:76px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);border-color:var(--acc)}
+button{font:inherit;cursor:pointer}
+.btn{min-height:48px;padding:0 16px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;width:100%}
+.btn.alt{background:#fff;color:var(--acc);border:1.5px solid var(--acc)}
+.btn.sm{width:auto;min-height:44px}
+.btn.red{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.bar{display:flex;gap:8px;margin:8px 0}
+.bar>*{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin:8px 0}
+.row{display:flex;align-items:center;gap:8px}
+.row .grow{flex:1;min-width:0}
+.row b,.row small{display:block;overflow-wrap:anywhere}
+small,.muted{color:var(--mute);font-size:13px}
+.ib{min-width:44px;min-height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-size:20px;font-weight:700}
+.ib.t{font-size:14px;padding:0 10px}
+.ib.red{color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}
+.gb{position:relative;min-height:64px;padding:8px 10px;border-radius:var(--r);border:1.5px solid var(--line);background:#fff;color:var(--ink);text-align:left;font-weight:700;overflow-wrap:anywhere}
+.gb small{display:block;font-weight:400}
+.gb.has{border-color:var(--acc);background:var(--acct)}
+.gb i{position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--acc);color:#fff;font:700 13px/24px inherit;text-align:center;font-style:normal}
+.stp{display:flex;align-items:center;gap:6px}
+.stp input{width:64px;text-align:center;padding:6px;font-weight:700}
+.pr{display:grid;grid-template-columns:1fr auto;gap:8px 8px}
+.pr .ctl{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.pr .sub{font-weight:700;text-align:right;min-width:84px}
+.total{display:flex;justify-content:space-between;align-items:center;margin:12px 0;padding:14px;border-radius:var(--r);background:var(--accd);color:#fff;font-size:20px;font-weight:800}
+.two{display:grid;grid-template-columns:1fr 92px;gap:8px}
+.empty{padding:22px 10px;text-align:center;color:var(--mute)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;min-height:58px;border:0;background:none;color:var(--mute);font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{color:var(--acc);box-shadow:inset 0 3px 0 var(--acc)}
+#modal{position:fixed;inset:0;z-index:20;background:#0008;display:none;align-items:flex-end;justify-content:center}
+#modal.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 10px}
+.sheet label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.sheet .chk{display:flex;gap:10px;align-items:center;min-height:44px;color:var(--ink);font-size:16px}
+.sheet .chk input{width:24px;min-height:24px}
+.sheet img{width:100%;border:1px solid var(--line);border-radius:8px}
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#10243e;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>Call Ledger</h1>
+  <div><button data-a="hist">History</button><button data-a="newList">New list</button></div>
+</header>
+<main>
+  <section id="s0">
+    <h2>Saved items</h2>
+    <input id="catQ" type="search" placeholder="Search saved items" data-f="catQ" autocomplete="off">
+    <div class="bar"><button class="btn" data-a="catAdd">+ Add item</button><button class="btn red" id="clrSample" data-a="clearSample">Clear sample data</button></div>
+    <div id="catList"></div>
+    <h2>Backup</h2>
+    <div class="bar"><button class="btn alt" data-a="export">Export Backup (JSON)</button><button class="btn alt" data-a="import">Import Backup (JSON)</button></div>
+    <input id="file" type="file" accept="application/json,.json" hidden>
+  </section>
+
+  <section id="s1">
+    <h2>Client / person / meeting</h2>
+    <input class="cl" data-f="client" placeholder="Who is calling?" autocomplete="off">
+    <h2>Tap to add</h2>
+    <input id="gridQ" type="search" placeholder="Filter items" data-f="gridQ" autocomplete="off">
+    <div class="grid" id="grid"></div>
+    <button class="btn alt" data-a="quick">+ New item for this list</button>
+    <h2>This list <span class="muted" id="capCount"></span></h2>
+    <div id="capList"></div>
+    <button class="btn" data-a="tab" data-id="2" style="margin-top:10px">Next: add prices</button>
+  </section>
+
+  <section id="s2">
+    <h2>Client / person / meeting</h2>
+    <input class="cl" data-f="client" placeholder="Name" autocomplete="off">
+    <div class="two" style="margin-top:8px">
+      <input type="date" data-f="date" id="dt" aria-label="Date">
+      <select data-f="cur" id="cur" aria-label="Currency"><option>₹</option><option>$</option><option>€</option><option>£</option><option>Rs</option><option>AED</option></select>
+    </div>
+    <h2>Items &amp; prices</h2>
+    <div id="priceList"></div>
+    <div class="total"><span>Grand Total</span><span id="gt"></span></div>
+    <label class="muted" for="note">Note (optional)</label>
+    <textarea id="note" data-f="note" placeholder="Delivery, payment terms, anything to remember"></textarea>
+    <button class="btn" data-a="preview" style="margin-top:12px">Preview &amp; Download JPG</button>
+  </section>
+</main>
+<nav>
+  <button data-a="tab" data-id="0"><span>☰</span>Saved items</button>
+  <button data-a="tab" data-id="1"><span>✎</span>Capture</button>
+  <button data-a="tab" data-id="2"><span>₹</span>Price &amp; export</button>
+</nav>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const KEY='callLedger.v1';
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>parseFloat(v)||0;
+const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:Number.isInteger(+n)?0:2});
+const blank=()=>({id:uid(),client:'',date:today(),cur:'₹',note:'',items:[]});
+const samples=()=>[['Basmati Rice','kg',90],['Sugar','kg',45],['Sunflower Oil','pcs',140],['Tea Powder','box',250],['Notebook','pcs',40]].map(([name,unit,price])=>({id:uid(),name,unit,price,sample:true}));
+
+let S=load(), tab=1, catQ='', gridQ='', lastUrl='', lastName='';
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.catalog)){s.hist=s.hist||[];s.active=s.active||blank();return s}}catch(e){}
+  return {catalog:samples(),active:blank(),hist:[]};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Could not save: storage is full or blocked')}}
+const A=()=>S.active;
+const total=d=>d.items.reduce((a,i)=>a+num(i.qty)*num(i.price),0);
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2000)}
+function modal(h){const m=$('#modal');m.innerHTML='<div class="sheet">'+h+'</div>';m.classList.add('on')}
+function closeModal(){$('#modal').classList.remove('on');$('#modal').innerHTML=''}
+function dl(href,name){const a=document.createElement('a');a.href=href;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+const hasName=(arr,n)=>arr.find(i=>i.name.trim().toLowerCase()===n.trim().toLowerCase());
+
+/* ---------- rendering ---------- */
+function renderCat(){
+  const q=catQ.trim().toLowerCase();
+  const list=S.catalog.filter(i=>i.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  $('#catList').innerHTML=list.length?list.map(i=>`<div class="card row"><div class="grow"><b>${esc(i.name)}</b><small>${esc(i.unit||'no unit')}${i.price!==''&&i.price!=null?' · default '+esc(fmt(i.price)):''}</small></div><button class="ib t" data-a="catEdit" data-id="${i.id}">Edit</button><button class="ib red" data-a="catDel" data-id="${i.id}" aria-label="Delete">✕</button></div>`).join(''):`<div class="empty">${S.catalog.length?'No match.':'No saved items yet. Tap “Add item”.'}</div>`;
+  $('#clrSample').style.display=S.catalog.some(i=>i.sample)?'':'none';
+}
+function renderGrid(){
+  const q=gridQ.trim().toLowerCase();
+  const list=S.catalog.filter(i=>i.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  $('#grid').innerHTML=list.length?list.map(i=>{const h=hasName(A().items,i.name);return `<button class="gb ${h?'has':''}" data-a="grid" data-id="${i.id}">${esc(i.name)}<small>${esc(i.unit||'')}</small>${h?`<i>${esc(h.qty)}</i>`:''}</button>`}).join(''):`<div class="empty" style="grid-column:1/-1">${S.catalog.length?'No match. Use “New item for this list”.':'Add items in the Saved items tab.'}</div>`;
+}
+function renderCap(){
+  const it=A().items;
+  $('#capCount').textContent=it.length?'('+it.length+')':'';
+  $('#capList').innerHTML=it.length?it.map(i=>`<div class="card row"><div class="grow"><b>${esc(i.name)}</b><small>${esc(i.unit||'')}</small></div><div class="stp"><button class="ib" data-a="dec" data-id="${i.id}" aria-label="Less">−</button><input type="number" inputmode="decimal" min="0" step="any" value="${esc(i.qty)}" data-f="qty" data-id="${i.id}" aria-label="Quantity"><button class="ib" data-a="inc" data-id="${i.id}" aria-label="More">+</button></div><button class="ib red" data-a="rm" data-id="${i.id}" aria-label="Remove">✕</button></div>`).join(''):'<div class="empty">Nothing yet. Tap an item above.</div>';
+}
+function renderPrice(){
+  const d=A();
+  $('#priceList').innerHTML=d.items.length?d.items.map(i=>`<div class="card pr"><div><b>${esc(i.name)}</b><small>${esc(i.unit||'')}</small></div><button class="ib red" data-a="rm" data-id="${i.id}" aria-label="Remove">✕</button><div class="ctl"><div class="stp"><button class="ib" data-a="dec" data-id="${i.id}">−</button><input type="number" inputmode="decimal" min="0" step="any" value="${esc(i.qty)}" data-f="qty" data-id="${i.id}" aria-label="Quantity"><button class="ib" data-a="inc" data-id="${i.id}">+</button></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="Unit price" value="${esc(i.price)}" data-f="price" data-id="${i.id}" aria-label="Unit price"><div class="sub" id="sub-${i.id}">${esc(d.cur)}${fmt(num(i.qty)*num(i.price))}</div></div></div>`).join(''):'<div class="empty">No items yet. Capture some in the Capture tab.</div>';
+  $('#dt').value=d.date;$('#cur').value=d.cur;$('#note').value=d.note||'';
+  upd();
+}
+function upd(){
+  const d=A();
+  $('#gt').textContent=d.cur+fmt(total(d));
+  d.items.forEach(i=>{const e=$('#sub-'+i.id);if(e)e.textContent=d.cur+fmt(num(i.qty)*num(i.price))});
+}
+function renderAll(){
+  $$('.cl').forEach(e=>{if(document.activeElement!==e)e.value=A().client});
+  renderCat();renderGrid();renderCap();renderPrice();
+}
+function setTab(n){
+  tab=n;
+  $$('section').forEach((s,i)=>s.classList.toggle('on',i===n));
+  $$('nav button').forEach((b,i)=>b.classList.toggle('on',i===n));
+  renderAll();window.scrollTo(0,0);
+}
+
+/* ---------- list actions ---------- */
+function addItem(name,unit,price){
+  const h=hasName(A().items,name);
+  if(h)h.qty=num(h.qty)+1;
+  else A().items.push({id:uid(),name:name.trim(),unit:unit||'',qty:1,price:price==null?'':price});
+  save();renderGrid();renderCap();
+}
+function find(id){return A().items.find(i=>i.id===id)}
+function upsertHist(d){
+  d=d||A();if(!d.items.length)return;
+  const snap=JSON.parse(JSON.stringify(d));snap.savedAt=Date.now();
+  const k=S.hist.findIndex(h=>h.id===snap.id);
+  if(k>=0)S.hist[k]=snap;else S.hist.unshift(snap);
+  S.hist=S.hist.slice(0,150);save();
+}
+
+/* ---------- item forms ---------- */
+function itemForm(mode,it){
+  it=it||{};
+  modal(`<h3>${mode==='quick'?'New item for this list':it.id?'Edit item':'Add saved item'}</h3>
+  <label for="fN">Item name</label><input id="fN" value="${esc(it.name||'')}" autocomplete="off">
+  <label for="fU">Unit (optional)</label><input id="fU" list="units" value="${esc(it.unit||'')}" placeholder="pcs, kg, box…" autocomplete="off"><datalist id="units"><option>pcs</option><option>kg</option><option>g</option><option>box</option><option>pack</option><option>litre</option><option>dozen</option></datalist>
+  <label for="fP">Default price (optional)</label><input id="fP" type="number" inputmode="decimal" min="0" step="any" value="${esc(it.price??'')}">
+  ${mode==='quick'?'<label class="chk"><input type="checkbox" id="fS" checked> Also save to Saved items</label>':''}
+  <div class="bar" style="margin-top:14px"><button class="btn alt" data-a="close">Cancel</button><button class="btn" data-a="saveItem" data-mode="${mode}" data-id="${it.id||''}">Save</button></div>`);
+  setTimeout(()=>$('#fN').focus(),50);
+}
+function saveItem(mode,id){
+  const name=$('#fN').value.trim();if(!name){toast('Enter an item name');return}
+  const unit=$('#fU').value.trim(),pv=$('#fP').value.trim(),price=pv===''?'':num(pv);
+  if(mode==='quick'){
+    addItem(name,unit,price);
+    if($('#fS').checked&&!hasName(S.catalog,name)){S.catalog.push({id:uid(),name,unit,price});save()}
+  }else if(id){const it=S.catalog.find(i=>i.id===id);Object.assign(it,{name,unit,price});delete it.sample;save()}
+  else{S.catalog.push({id:uid(),name,unit,price});save()}
+  closeModal();renderAll();
+}
+
+/* ---------- history ---------- */
+function histSheet(){
+  const h=S.hist;
+  modal(`<h3>History</h3>${h.length?h.map(e=>`<div class="card"><b>${esc(e.client||'Untitled')}</b><small>${esc(e.date)} · ${e.items.length} item${e.items.length==1?'':'s'} · ${esc(e.cur)}${fmt(total(e))}</small><div class="bar"><button class="btn sm alt" data-a="hOpen" data-id="${e.id}">Open</button><button class="btn sm alt" data-a="hJpg" data-id="${e.id}">JPG</button><button class="btn sm red" data-a="hDel" data-id="${e.id}">Delete</button></div></div>`).join(''):'<div class="empty">No past lists yet. Lists are saved when you export a JPG or start a new list.</div>'}<button class="btn alt" data-a="close" style="margin-top:8px">Close</button>`);
+}
+
+/* ---------- JPG receipt ---------- */
+const FONT=(px,w)=>`${w||400} ${px}px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif`;
+function paint(ctx,d,on){
+  const W=420,P=24,IW=W-2*P;
+  const T=(s,x,y,font,col,al)=>{if(!on)return;ctx.font=font;ctx.fillStyle=col;ctx.textAlign=al||'left';ctx.fillText(s,x,y)};
+  const L=(y,h,col)=>{if(!on)return;ctx.fillStyle=col||'#c9ced6';ctx.fillRect(P,y,IW,h||1)};
+  const wrap=(txt,maxW,font)=>{ctx.font=font;const out=[];let line='';
+    String(txt).split(/\s+/).forEach(w=>{
+      while(ctx.measureText(w).width>maxW){let k=w.length;while(k>1&&ctx.measureText(w.slice(0,k)).width>maxW)k--;if(line){out.push(line);line=''}out.push(w.slice(0,k));w=w.slice(k)}
+      const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t});
+    if(line)out.push(line);return out.length?out:['']};
+  let y=40;
+  wrap(d.client||'Untitled list',IW,FONT(26,800)).forEach(s=>{T(s,P,y,FONT(26,800),'#0a0a0a');y+=32});
+  const ds=new Date(d.date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  y-=6;T(ds,P,y,FONT(14),'#333');y+=16;
+  L(y,2,'#0a0a0a');y+=22;
+  T('ITEM',P,y,FONT(11,700),'#555');T('QTY',225,y,FONT(11,700),'#555','right');T('RATE',315,y,FONT(11,700),'#555','right');T('AMOUNT',W-P,y,FONT(11,700),'#555','right');
+  y+=10;L(y,1,'#0a0a0a');y+=24;
+  d.items.forEach(i=>{
+    const nm=wrap(i.name,150,FONT(14,600));
+    const q=fmt(i.qty)+(i.unit?' '+i.unit:'');
+    T(q,225,y,FONT(13),'#111','right');
+    T(num(i.price)?fmt(i.price):'-',315,y,FONT(13),'#111','right');
+    T(fmt(num(i.qty)*num(i.price)),W-P,y,FONT(14,700),'#0a0a0a','right');
+    nm.forEach((s,k)=>{T(s,P,y+k*18,FONT(14,600),'#0a0a0a')});
+    y+=(nm.length-1)*18+12;L(y,1,'#e1e5ea');y+=22;
+  });
+  y-=8;L(y,2,'#0a0a0a');y+=36;
+  T('Grand Total',P,y,FONT(17,700),'#0a0a0a');
+  T(d.cur+fmt(total(d)),W-P,y,FONT(24,800),'#0a0a0a','right');
+  y+=14;L(y,2,'#0a0a0a');y+=26;
+  if(d.note&&d.note.trim()){
+    wrap('Note: '+d.note.trim().replace(/\s*\n\s*/g,' '),IW,FONT(13)).forEach(s=>{T(s,P,y,FONT(13),'#333');y+=18});y+=6;
+  }
+  return y+P-10;
+}
+function renderCanvas(d,scale){
+  const tmp=document.createElement('canvas').getContext('2d');
+  const H=Math.ceil(paint(tmp,d,false)),W=420;
+  const c=document.createElement('canvas');c.width=W*scale;c.height=H*scale;
+  const x=c.getContext('2d');x.scale(scale,scale);
+  x.fillStyle='#ffffff';x.fillRect(0,0,W,H);
+  x.strokeStyle='#d5dae0';x.lineWidth=1;x.strokeRect(8.5,8.5,W-17,H-17);
+  paint(x,d,true);return c;
+}
+function fileName(d){return (String(d.client||'List').trim().replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_+|_+$/g,'')||'List')+'-'+d.date+'.jpg'}
+function showPreview(d){
+  if(!d.items.length){toast('Add at least one item first');return}
+  const c=renderCanvas(d,3);
+  lastUrl=c.toDataURL('image/jpeg',0.95);lastName=fileName(d);
+  if(d.id===A().id)upsertHist();
+  modal(`<h3>Preview</h3><img src="${lastUrl}" alt="Receipt preview"><div class="bar" style="margin-top:12px"><button class="btn alt" data-a="close">Close</button><button class="btn" data-a="dlJpg">Download JPG</button></div><small>${esc(lastName)}</small>`);
+}
+
+/* ---------- backup ---------- */
+function exportJson(){
+  const blob=new Blob([JSON.stringify({app:'call-ledger',version:1,exported:new Date().toISOString(),catalog:S.catalog,history:S.hist,active:S.active},null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob);dl(u,'call-ledger-backup-'+today()+'.json');setTimeout(()=>URL.revokeObjectURL(u),2000);toast('Backup downloaded');
+}
+function importJson(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const j=JSON.parse(r.result);
+      if(!Array.isArray(j.catalog))throw 0;
+      if(!confirm('Replace your saved items, history and current list with this backup?'))return;
+      S.catalog=j.catalog;S.hist=Array.isArray(j.history)?j.history:[];
+      if(j.active&&Array.isArray(j.active.items))S.active=Object.assign(blank(),j.active);
+      save();renderAll();toast('Backup imported');
+    }catch(e){toast('That file is not a valid backup')}
+  };
+  r.readAsText(file);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  if(e.target.id==='modal'){closeModal();return}
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=b.dataset.a,id=b.dataset.id;
+  switch(a){
+    case 'tab':setTab(+id);break;
+    case 'close':closeModal();break;
+    case 'catAdd':itemForm('cat');break;
+    case 'catEdit':itemForm('cat',S.catalog.find(i=>i.id===id));break;
+    case 'catDel':{const it=S.catalog.find(i=>i.id===id);if(it&&confirm('Delete “'+it.name+'” from saved items?')){S.catalog=S.catalog.filter(i=>i.id!==id);save();renderAll()}break}
+    case 'clearSample':if(confirm('Remove the 5 sample items?')){S.catalog=S.catalog.filter(i=>!i.sample);save();renderAll()}break;
+    case 'grid':{const it=S.catalog.find(i=>i.id===id);if(it)addItem(it.name,it.unit,it.price);break}
+    case 'quick':itemForm('quick');break;
+    case 'saveItem':saveItem(b.dataset.mode,id);break;
+    case 'inc':{const i=find(id);if(i){i.qty=num(i.qty)+1;save();tab===1?(renderGrid(),renderCap()):(renderPrice())}break}
+    case 'dec':{const i=find(id);if(i){i.qty=Math.max(1,num(i.qty)-1);save();tab===1?(renderGrid(),renderCap()):(renderPrice())}break}
+    case 'rm':A().items=A().items.filter(i=>i.id!==id);save();renderGrid();renderCap();renderPrice();break;
+    case 'preview':showPreview(A());break;
+    case 'dlJpg':dl(lastUrl,lastName);toast('Downloading '+lastName);break;
+    case 'hist':histSheet();break;
+    case 'newList':
+      if(A().items.length){if(!confirm('Start a new list? The current one is saved to History.'))break;upsertHist()}
+      S.active=blank();save();setTab(1);toast('New list ready');break;
+    case 'hOpen':{const h=S.hist.find(x=>x.id===id);if(!h)break;if(A().id!==h.id)upsertHist();S.active=JSON.parse(JSON.stringify(h));save();closeModal();setTab(2);break}
+    case 'hJpg':{const h=S.hist.find(x=>x.id===id);if(h)showPreview(h);break}
+    case 'hDel':if(confirm('Delete this past list?')){S.hist=S.hist.filter(x=>x.id!==id);save();histSheet()}break;
+    case 'export':exportJson();break;
+    case 'import':$('#file').click();break;
+  }
+});
+document.addEventListener('input',e=>{
+  const f=e.target.dataset.f;if(!f)return;const v=e.target.value;
+  if(f==='client'){A().client=v;$$('.cl').forEach(x=>{if(x!==e.target)x.value=v});save()}
+  else if(f==='date'){A().date=v||today();save()}
+  else if(f==='cur'){A().cur=v;save();renderPrice()}
+  else if(f==='note'){A().note=v;save()}
+  else if(f==='price'){const i=find(e.target.dataset.id);if(i){i.price=v===''?'':num(v);save();upd()}}
+  else if(f==='catQ'){catQ=v;renderCat()}
+  else if(f==='gridQ'){gridQ=v;renderGrid()}
+});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.f==='qty'){
+    const i=find(e.target.dataset.id);if(!i)return;
+    i.qty=Math.max(0,num(e.target.value))||1;save();renderGrid();renderCap();renderPrice();
+  }
+  if(e.target.id==='file'&&e.target.files[0]){importJson(e.target.files[0]);e.target.value=''}
+});
+$('#cur').addEventListener('change',()=>{});
+
+/* start fresh date on an empty list */
+if(!A().items.length&&!A().client)A().date=today();
+save();setTab(1);
+})();
+</script>
+</body>
+</html>
